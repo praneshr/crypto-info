@@ -29,9 +29,7 @@ $ crypto-info -h
   Commands:
 
     convert|c <unit> <symbol> [currency_symbol]  Convert cryptocurrency to other cryptocurrency or local currency
-
     price|p <symbol> [currency_symbol]           Price of a cryptocurrency in other cryptocurrency or local currency
-
     market|m [options] [currency_symbol]         Cryptocurrency market details
 
   Examples:
