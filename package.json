@@ -1,0 +1,28 @@
+{
+  "name": "crypto-info",
+  "version": "0.0.1",
+  "description": "All crypto prices and convertions",
+  "repository": "git@github.com:praneshr/crypto-info.git",
+  "author": "Pranesh Ravi <praneshpranesh@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "preferGlobal": true,
+  "bin": "bin/index.js",
+  "scripts": {
+    "build": "babel src --out-dir bin",
+    "build:watch": "babel src --out-dir bin --watch"
+  },
+  "dependencies": {
+    "args": "^3.0.8",
+    "axios": "^0.18.0",
+    "chalk": "^2.3.1",
+    "cli-table2": "^0.2.0",
+    "commander": "^2.14.1",
+    "cryptocurrencies": "^2.0.0",
+    "ora": "^2.0.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1"
+  }
+}
