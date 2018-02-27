@@ -63,7 +63,6 @@ _commander2.default.command('convert <unit> <symbol> [currency_symbol]').alias('
       oraInstance.stop();
       var priceKey = 'price_' + currencySymbolCaps.toLowerCase();
       var priceInLocalCurrency = data[0][priceKey];
-      var value = availableCurrencySymbols.includes(symbol.toUpperCase());
       console.log(_chalk2.default.blue(unit + ' ' + symbol) + ' = ' + _chalk2.default.green(priceInLocalCurrency * unitInt + ' ' + currencySymbolCaps));
     });
   }

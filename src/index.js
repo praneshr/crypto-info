@@ -77,7 +77,6 @@ program
         oraInstance.stop()
         const priceKey = `price_${currencySymbolCaps.toLowerCase()}`
         const priceInLocalCurrency = data[0][priceKey]
-        const value = availableCurrencySymbols.includes(symbol.toUpperCase())
         console.log(`${chalk.blue(`${unit} ${symbol}`)} = ${chalk.green(`${priceInLocalCurrency * unitInt} ${currencySymbolCaps}`)}`);
       })
     }
