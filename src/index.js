@@ -6,6 +6,7 @@ import axios from 'axios'
 import ora from 'ora'
 import Table from 'cli-table2'
 import chalk from 'chalk'
+import fromNow from 'from-now'
 
 // work around to fix invalid symbol
 cryptocurrencies.BCH = 'Bitcoin Cash'
@@ -135,11 +136,13 @@ program
   .command('market [fiat_symbol]')
   .option('-l, --limit <n>', 'Limit the number of results', parseInt)
   .option('-w, --watch', 'Auto refresh data every 1 minute')
+  .option('-o, --only <list>', 'Filter coins to be listed', val => val.split(',').map(s => s.toUpperCase()))
   .alias('m')
   .description('Cryptocurrency market details')
   .action((fiat_symbol = defaultCurrencySymbol, cmd) => {
     const limit = cmd.limit || 10
     const watch = cmd.watch || false
+    const only = (cmd.only && cmd.only.length !== 0 && cmd.only) || undefined
     const currencySymbolCaps = fiat_symbol.toUpperCase()
     const currencySymbolLowerCase = fiat_symbol.toLowerCase()
     if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
@@ -147,11 +150,10 @@ program
     }
     oraInstance.start()
     const marketData = () => {
-      axios.get(`${defaultRequestUrl}?convert=${currencySymbolCaps}&limit=${limit}`)
+      axios.get(`${defaultRequestUrl}?convert=${currencySymbolCaps}&limit=${only ? 10000000 : limit}`)
       .then(({ data }) => {
         oraInstance.stop()
         const priceKey = `price_${currencySymbolLowerCase}`
-        const marketCapKey = `market_cap_${currencySymbolLowerCase}`
         const table = new Table({
           style: {
             head: [],
@@ -165,8 +167,12 @@ program
           chalk.blue('Change 1h'),
           chalk.blue('Change 24h'),
           chalk.blue('Change 1w'),
+          chalk.blue('Last Updated'),
         ])
         data.forEach((o) => {
+          if (only && !only.includes(o.symbol)) {
+            return
+          }
           table.push([
             o.rank,
             o.symbol,
@@ -175,13 +181,17 @@ program
             changeColor(o.percent_change_1h),
             changeColor(o.percent_change_24h),
             changeColor(o.percent_change_7d),
+            `${fromNow(parseInt(o.last_updated * 1000))} ago`,
           ])
         })
         if (watch) {
           process.stderr.write('\u001B[?1049h')
         }
-        console.log(`Last Updated at ${new Date()}`)
+        console.log(`\nFetched at ${chalk.bold.yellow(new Date())}`)
         console.log(table.toString());
+        if (watch) {
+          console.log('The table will update automatically every 1 minute.');
+        }
       })
       .catch(error)
     }

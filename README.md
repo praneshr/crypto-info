@@ -8,9 +8,9 @@ A simple CLI tool for crypto conversions, info and market details
 
 ``` bash
   yarn global add crypto-info
-  
+
   # or
-  
+
   npm i crypto-info -g
 ```
 
@@ -45,6 +45,7 @@ $ crypto-info -h
     $ crypto-info p ETH EUR
     $ crypto-info market INR
     $ crypto-info m INR --limit 25 --watch
+    $ crypto-info m ETH --only xlm,xrp,btc,ltc
 ```
 
 ## Info
