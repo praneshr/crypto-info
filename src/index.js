@@ -111,53 +111,66 @@ program
 program
   .command('market [currency_symbol]')
   .option('-l, --limit <n>', 'Limit the number of results', parseInt)
+  .option('-w, --watch', 'Auto refresh data every 1 minute')
   .alias('m')
   .description('Cryptocurrency market details')
   .action((currency_symbol = defaultCurrencySymbol, cmd) => {
     const limit = cmd.limit || 10
+    const watch = cmd.watch || false
     const currencySymbolCaps = currency_symbol.toUpperCase()
     const currencySymbolLowerCase = currency_symbol.toLowerCase()
     if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
       return console.error(`${currencySymbolCaps} is currently not supported.`)
     }
     oraInstance.start()
-    axios.get(`${defaultRequestUrl}?convert=${currencySymbolCaps}&limit=${limit}`)
-    .then(({ data }) => {
-      oraInstance.stop()
-      const priceKey = `price_${currencySymbolLowerCase}`
-      const marketCapKey = `market_cap_${currencySymbolLowerCase}`
-      const table = new Table({
-        style: {
-          head: [],
-        },
-      })
-      table.push([
-        chalk.blue('Rank'),
-        chalk.blue('Symbol'),
-        chalk.blue('Name'),
-        chalk.blue(`Price (${currencySymbolCaps})`),
-        chalk.blue('Change 1h'),
-        chalk.blue('Change 24h'),
-        chalk.blue('Change 1w'),
-      ])
-      data.forEach((o) => {
+    const marketData = () => {
+      axios.get(`${defaultRequestUrl}?convert=${currencySymbolCaps}&limit=${limit}`)
+      .then(({ data }) => {
+        oraInstance.stop()
+        const priceKey = `price_${currencySymbolLowerCase}`
+        const marketCapKey = `market_cap_${currencySymbolLowerCase}`
+        const table = new Table({
+          style: {
+            head: [],
+          },
+        })
         table.push([
-          o.rank,
-          o.symbol,
-          o.name,
-          `${o[priceKey]} ${currencySymbolCaps}`,
-          changeColor(o.percent_change_1h),
-          changeColor(o.percent_change_24h),
-          changeColor(o.percent_change_7d),
+          chalk.blue('Rank'),
+          chalk.blue('Symbol'),
+          chalk.blue('Name'),
+          chalk.blue(`Price (${currencySymbolCaps})`),
+          chalk.blue('Change 1h'),
+          chalk.blue('Change 24h'),
+          chalk.blue('Change 1w'),
         ])
+        data.forEach((o) => {
+          table.push([
+            o.rank,
+            o.symbol,
+            o.name,
+            `${o[priceKey]} ${currencySymbolCaps}`,
+            changeColor(o.percent_change_1h),
+            changeColor(o.percent_change_24h),
+            changeColor(o.percent_change_7d),
+          ])
+        })
+        if (watch) {
+          process.stderr.write('\u001B[?1049h')
+        }
+        console.log(`Last Updated at ${new Date()}`)
+        console.log(table.toString());
       })
-      console.log(table.toString());
-    })
+    }
+    if (watch) {
+      marketData()
+      return setInterval(marketData, 60000)
+    }
+    return marketData()
   })
 
 // General
 program
-  .version('0.0.1')
+  .version('0.0.2')
   .description('Cryptocurrency converter and market info')
 
   program.on('--help', () => {

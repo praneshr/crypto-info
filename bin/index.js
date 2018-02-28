@@ -93,38 +93,50 @@ _commander2.default.command('price <symbol> [currency_symbol]').alias('p').descr
 });
 
 // Market info
-_commander2.default.command('market [currency_symbol]').option('-l, --limit <n>', 'Limit the number of results', parseInt).alias('m').description('Cryptocurrency market details').action(function () {
+_commander2.default.command('market [currency_symbol]').option('-l, --limit <n>', 'Limit the number of results', parseInt).option('-w, --watch', 'Auto refresh data every 1 minute').alias('m').description('Cryptocurrency market details').action(function () {
   var currency_symbol = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultCurrencySymbol;
   var cmd = arguments[1];
 
   var limit = cmd.limit || 10;
+  var watch = cmd.watch || false;
   var currencySymbolCaps = currency_symbol.toUpperCase();
   var currencySymbolLowerCase = currency_symbol.toLowerCase();
   if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
     return console.error(currencySymbolCaps + ' is currently not supported.');
   }
   oraInstance.start();
-  _axios2.default.get(defaultRequestUrl + '?convert=' + currencySymbolCaps + '&limit=' + limit).then(function (_ref3) {
-    var data = _ref3.data;
+  var marketData = function marketData() {
+    _axios2.default.get(defaultRequestUrl + '?convert=' + currencySymbolCaps + '&limit=' + limit).then(function (_ref3) {
+      var data = _ref3.data;
 
-    oraInstance.stop();
-    var priceKey = 'price_' + currencySymbolLowerCase;
-    var marketCapKey = 'market_cap_' + currencySymbolLowerCase;
-    var table = new _cliTable2.default({
-      style: {
-        head: []
+      oraInstance.stop();
+      var priceKey = 'price_' + currencySymbolLowerCase;
+      var marketCapKey = 'market_cap_' + currencySymbolLowerCase;
+      var table = new _cliTable2.default({
+        style: {
+          head: []
+        }
+      });
+      table.push([_chalk2.default.blue('Rank'), _chalk2.default.blue('Symbol'), _chalk2.default.blue('Name'), _chalk2.default.blue('Price (' + currencySymbolCaps + ')'), _chalk2.default.blue('Change 1h'), _chalk2.default.blue('Change 24h'), _chalk2.default.blue('Change 1w')]);
+      data.forEach(function (o) {
+        table.push([o.rank, o.symbol, o.name, o[priceKey] + ' ' + currencySymbolCaps, changeColor(o.percent_change_1h), changeColor(o.percent_change_24h), changeColor(o.percent_change_7d)]);
+      });
+      if (watch) {
+        process.stderr.write('\x1B[?1049h');
       }
+      console.log('Last Updated at ' + new Date());
+      console.log(table.toString());
     });
-    table.push([_chalk2.default.blue('Rank'), _chalk2.default.blue('Symbol'), _chalk2.default.blue('Name'), _chalk2.default.blue('Price (' + currencySymbolCaps + ')'), _chalk2.default.blue('Change 1h'), _chalk2.default.blue('Change 24h'), _chalk2.default.blue('Change 1w')]);
-    data.forEach(function (o) {
-      table.push([o.rank, o.symbol, o.name, o[priceKey] + ' ' + currencySymbolCaps, changeColor(o.percent_change_1h), changeColor(o.percent_change_24h), changeColor(o.percent_change_7d)]);
-    });
-    console.log(table.toString());
-  });
+  };
+  if (watch) {
+    marketData();
+    return setInterval(marketData, 60000);
+  }
+  return marketData();
 });
 
 // General
-_commander2.default.version('0.0.1').description('Cryptocurrency converter and market info');
+_commander2.default.version('0.0.2').description('Cryptocurrency converter and market info');
 
 _commander2.default.on('--help', function () {
   console.log('');

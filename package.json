@@ -10,7 +10,8 @@
   "bin": "bin/index.js",
   "scripts": {
     "build": "babel src --out-dir bin",
-    "build:watch": "babel src --out-dir bin --watch"
+    "build:watch": "babel src --out-dir bin --watch",
+    "prepublish": "yarn build"
   },
   "dependencies": {
     "args": "^3.0.8",
