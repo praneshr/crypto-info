@@ -2,6 +2,8 @@
 
 A simple CLI tool for crypto conversions, info and market details
 
+![CLI](https://image.ibb.co/cC8YOH/ezgif_com_video_to_gif_1.gif)
+
 ## Install
 
 ``` bash
@@ -40,8 +42,12 @@ $ crypto-info -h
     $ crypto-info price ETH
     $ crypto-info p ETH EUR
     $ crypto-info market INR
-    $ crypto-info m INR --limit 25
+    $ crypto-info m INR --limit 25 --watch
 ```
+
+## Info
+
+All data are obtained from [coinmarketcap](https://coinmarketcap.com) . There is a rate limit of 10 requests per minute.
 
 ## License
 

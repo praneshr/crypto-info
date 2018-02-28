@@ -7,6 +7,9 @@ import ora from 'ora'
 import Table from 'cli-table2'
 import chalk from 'chalk'
 
+// work around to fix invalid symbol
+cryptocurrencies.BCH = 'Bitcoin Cash'
+
 const defaultRequestUrl = 'https://api.coinmarketcap.com/v1/ticker/'
 const defaultCurrencySymbol = 'USD'
 const availableCurrencySymbols = [
@@ -47,7 +50,7 @@ const combinedAvailableCurrencies = availableCurrencySymbols.concat(cryptocurren
 const changeColor = (changeString) => {
   const changeFloat = parseFloat(changeString)
   const changeStringFull = `${changeFloat.toFixed(2)} %`
-  if (changeFloat > 0) {
+  if (changeFloat >= 0) {
     return chalk.green(changeStringFull)
   }
   return chalk.red(changeStringFull)
@@ -56,6 +59,11 @@ const changeColor = (changeString) => {
 const oraInstance = ora({
   text: 'Loading...'
 })
+
+const error = (err) => {
+  oraInstance.stop()
+  console.log(chalk.red('ERROR: Something went wrong! Try again.'));
+}
 
 // Coin Price Converter
 program
@@ -68,27 +76,29 @@ program
     const isBaseFiat = availableCurrencySymbols.includes(symbolCaps)
     const isConversionUnitFiat = availableCurrencySymbols.includes(symbol2Caps)
     if (isBaseFiat && isConversionUnitFiat) {
-      return console.error(`Fiat to Fiat conversion is not supported`)
+      return console.log(chalk.red(`ERROR: Fiat to Fiat conversion is not supported`))
     }
     const symbolId = cryptocurrencies[
       isBaseFiat ? symbol2Caps : symbolCaps
     ]
     const conversionUnit = isBaseFiat ? symbolCaps : symbol2Caps
     if (!isBaseFiat && !combinedAvailableCurrencies.includes(conversionUnit)) {
-      return console.error(`${conversionUnit} is currently not supported.`)
+      return console.log(chalk.red(`ERROR: ${conversionUnit} is currently not supported.`))
     }
     if (symbolId) {
       oraInstance.start()
-      axios.get(`${defaultRequestUrl}${symbolId.toLowerCase()}/?convert=${conversionUnit}`)
+      axios.get(`${defaultRequestUrl}${symbolId.toLowerCase().replace(/ /g, '-')}/?convert=${conversionUnit}`)
       .then(({ data }) => {
         oraInstance.stop()
         const priceKey = `price_${conversionUnit.toLowerCase()}`
         const priceInLocalCurrency = data[0][priceKey]
+        const percentageChange = data[0].percent_change_1h
         const value = isBaseFiat
           ? unit / priceInLocalCurrency
           : unit * priceInLocalCurrency
-        console.log(`${chalk.blue(`${unit} ${symbol}`)} = ${chalk.green(`${value} ${symbol2Caps}`)}`);
+        console.log(`${chalk.blue(`${unit} ${symbol}`)} = ${chalk.green(`${value} ${symbol2Caps}`)} (${changeColor(percentageChange)} in 1h)`);
       })
+      .catch(error)
     }
   })
 
@@ -102,18 +112,21 @@ program
     const currencySymbolCaps = fiat_symbol.toUpperCase()
     const symbolId = cryptocurrencies[symbolCaps]
     if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
-      return console.error(`${currencySymbolCaps} is currently not supported.`)
+      return console.log(chalk.red(`ERROR: ${currencySymbolCaps} is currently not supported.`))
     }
     if (symbolId) {
       oraInstance.start()
-      axios.get(`${defaultRequestUrl}${symbolId.toLowerCase()}/?convert=${currencySymbolCaps}`)
+      axios.get(`${defaultRequestUrl}${symbolId.toLowerCase().replace(/ /g, '-')}/?convert=${currencySymbolCaps}`)
       .then(({ data }) => {
         oraInstance.stop()
         const priceKey = `price_${currencySymbolCaps.toLowerCase()}`
         const priceInLocalCurrency = data[0][priceKey]
-        const percentageChange = data[0].percent_change_24h
-        console.log(`${chalk.blue(`1 ${symbol}`)} = ${chalk.green(`${priceInLocalCurrency} ${currencySymbolCaps}`)} (${changeColor(percentageChange)})`);
+        const percentageChange = data[0].percent_change_1h
+        console.log(`${chalk.blue(`1 ${symbolCaps}`)} = ${chalk.green(`${priceInLocalCurrency} ${currencySymbolCaps}`)} (${changeColor(percentageChange)} in 1h)`)
       })
+      .catch(error)
+    } else {
+      return console.log(chalk.red(`ERROR: ${symbolCaps} is currently not supported.`))
     }
   })
 
@@ -130,7 +143,7 @@ program
     const currencySymbolCaps = fiat_symbol.toUpperCase()
     const currencySymbolLowerCase = fiat_symbol.toLowerCase()
     if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
-      return console.error(`${currencySymbolCaps} is currently not supported.`)
+      return console.log(chalk.red(`ERROR: ${currencySymbolCaps} is currently not supported.`))
     }
     oraInstance.start()
     const marketData = () => {
@@ -170,6 +183,7 @@ program
         console.log(`Last Updated at ${new Date()}`)
         console.log(table.toString());
       })
+      .catch(error)
     }
     if (watch) {
       marketData()
@@ -193,7 +207,7 @@ program
     console.log('    $ crypto-info price ETH');
     console.log('    $ crypto-info p ETH EUR');
     console.log('    $ crypto-info market INR');
-    console.log('    $ crypto-info m INR --limit 25');
+    console.log('    $ crypto-info m INR --limit 25 --watch');
     console.log('');
   });
 

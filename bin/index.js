@@ -27,6 +27,9 @@ var _chalk2 = _interopRequireDefault(_chalk);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// work around to fix invalid symbol
+_cryptocurrencies2.default.BCH = 'Bitcoin Cash';
+
 var defaultRequestUrl = 'https://api.coinmarketcap.com/v1/ticker/';
 var defaultCurrencySymbol = 'USD';
 var availableCurrencySymbols = ['AUD', 'BRL', 'CAD', 'CHF', 'CLP', 'CNY', 'CZK', 'DKK', 'EUR', 'GBP', 'HKD', 'HUF', 'IDR', 'ILS', 'INR', 'JPY', 'KRW', 'MXN', 'MYR', 'NOK', 'NZD', 'PHP', 'PKR', 'PLN', 'RUB', 'SEK', 'SGD', 'THB', 'TRY', 'TWD', 'ZAR', 'USD'];
@@ -34,7 +37,7 @@ var combinedAvailableCurrencies = availableCurrencySymbols.concat(_cryptocurrenc
 var changeColor = function changeColor(changeString) {
   var changeFloat = parseFloat(changeString);
   var changeStringFull = changeFloat.toFixed(2) + ' %';
-  if (changeFloat > 0) {
+  if (changeFloat >= 0) {
     return _chalk2.default.green(changeStringFull);
   }
   return _chalk2.default.red(changeStringFull);
@@ -44,6 +47,11 @@ var oraInstance = (0, _ora2.default)({
   text: 'Loading...'
 });
 
+var error = function error(err) {
+  oraInstance.stop();
+  console.log(_chalk2.default.red('ERROR: Something went wrong! Try again.'));
+};
+
 // Coin Price Converter
 _commander2.default.command('convert <unit> <symbol> <symbol_2>').alias('c').description('Convert fiat to crypto or crypto to fiat or crypto to crypto').action(function (unit, symbol, symbol_2) {
   var symbolCaps = symbol.toUpperCase();
@@ -51,24 +59,25 @@ _commander2.default.command('convert <unit> <symbol> <symbol_2>').alias('c').des
   var isBaseFiat = availableCurrencySymbols.includes(symbolCaps);
   var isConversionUnitFiat = availableCurrencySymbols.includes(symbol2Caps);
   if (isBaseFiat && isConversionUnitFiat) {
-    return console.error('Fiat to Fiat conversion is not supported');
+    return console.log(_chalk2.default.red('ERROR: Fiat to Fiat conversion is not supported'));
   }
   var symbolId = _cryptocurrencies2.default[isBaseFiat ? symbol2Caps : symbolCaps];
   var conversionUnit = isBaseFiat ? symbolCaps : symbol2Caps;
   if (!isBaseFiat && !combinedAvailableCurrencies.includes(conversionUnit)) {
-    return console.error(conversionUnit + ' is currently not supported.');
+    return console.log(_chalk2.default.red('ERROR: ' + conversionUnit + ' is currently not supported.'));
   }
   if (symbolId) {
     oraInstance.start();
-    _axios2.default.get('' + defaultRequestUrl + symbolId.toLowerCase() + '/?convert=' + conversionUnit).then(function (_ref) {
+    _axios2.default.get('' + defaultRequestUrl + symbolId.toLowerCase().replace(/ /g, '-') + '/?convert=' + conversionUnit).then(function (_ref) {
       var data = _ref.data;
 
       oraInstance.stop();
       var priceKey = 'price_' + conversionUnit.toLowerCase();
       var priceInLocalCurrency = data[0][priceKey];
+      var percentageChange = data[0].percent_change_1h;
       var value = isBaseFiat ? unit / priceInLocalCurrency : unit * priceInLocalCurrency;
-      console.log(_chalk2.default.blue(unit + ' ' + symbol) + ' = ' + _chalk2.default.green(value + ' ' + symbol2Caps));
-    });
+      console.log(_chalk2.default.blue(unit + ' ' + symbol) + ' = ' + _chalk2.default.green(value + ' ' + symbol2Caps) + ' (' + changeColor(percentageChange) + ' in 1h)');
+    }).catch(error);
   }
 });
 
@@ -80,19 +89,21 @@ _commander2.default.command('price <symbol> [fiat_symbol]').alias('p').descripti
   var currencySymbolCaps = fiat_symbol.toUpperCase();
   var symbolId = _cryptocurrencies2.default[symbolCaps];
   if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
-    return console.error(currencySymbolCaps + ' is currently not supported.');
+    return console.log(_chalk2.default.red('ERROR: ' + currencySymbolCaps + ' is currently not supported.'));
   }
   if (symbolId) {
     oraInstance.start();
-    _axios2.default.get('' + defaultRequestUrl + symbolId.toLowerCase() + '/?convert=' + currencySymbolCaps).then(function (_ref2) {
+    _axios2.default.get('' + defaultRequestUrl + symbolId.toLowerCase().replace(/ /g, '-') + '/?convert=' + currencySymbolCaps).then(function (_ref2) {
       var data = _ref2.data;
 
       oraInstance.stop();
       var priceKey = 'price_' + currencySymbolCaps.toLowerCase();
       var priceInLocalCurrency = data[0][priceKey];
-      var percentageChange = data[0].percent_change_24h;
-      console.log(_chalk2.default.blue('1 ' + symbol) + ' = ' + _chalk2.default.green(priceInLocalCurrency + ' ' + currencySymbolCaps) + ' (' + changeColor(percentageChange) + ')');
-    });
+      var percentageChange = data[0].percent_change_1h;
+      console.log(_chalk2.default.blue('1 ' + symbolCaps) + ' = ' + _chalk2.default.green(priceInLocalCurrency + ' ' + currencySymbolCaps) + ' (' + changeColor(percentageChange) + ' in 1h)');
+    }).catch(error);
+  } else {
+    return console.log(_chalk2.default.red('ERROR: ' + symbolCaps + ' is currently not supported.'));
   }
 });
 
@@ -106,7 +117,7 @@ _commander2.default.command('market [fiat_symbol]').option('-l, --limit <n>', 'L
   var currencySymbolCaps = fiat_symbol.toUpperCase();
   var currencySymbolLowerCase = fiat_symbol.toLowerCase();
   if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
-    return console.error(currencySymbolCaps + ' is currently not supported.');
+    return console.log(_chalk2.default.red('ERROR: ' + currencySymbolCaps + ' is currently not supported.'));
   }
   oraInstance.start();
   var marketData = function marketData() {
@@ -130,7 +141,7 @@ _commander2.default.command('market [fiat_symbol]').option('-l, --limit <n>', 'L
       }
       console.log('Last Updated at ' + new Date());
       console.log(table.toString());
-    });
+    }).catch(error);
   };
   if (watch) {
     marketData();
@@ -152,7 +163,7 @@ _commander2.default.on('--help', function () {
   console.log('    $ crypto-info price ETH');
   console.log('    $ crypto-info p ETH EUR');
   console.log('    $ crypto-info market INR');
-  console.log('    $ crypto-info m INR --limit 25');
+  console.log('    $ crypto-info m INR --limit 25 --watch');
   console.log('');
 });
 
