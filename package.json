@@ -1,6 +1,6 @@
 {
   "name": "crypto-info",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "All crypto prices and convertions",
   "repository": "git@github.com:praneshr/crypto-info.git",
   "author": "Pranesh Ravi <praneshpranesh@gmail.com>",
