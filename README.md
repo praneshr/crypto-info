@@ -7,7 +7,7 @@ A simple CLI tool for crypto conversions, info and market details
 ## Install
 
 ``` bash
-  yarn install crypto-info --global
+  yarn global add crypto-info
   
   # or
   
