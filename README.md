@@ -8,7 +8,9 @@ A simple CLI tool for crypto conversions, info and market details
 
 ``` bash
   yarn install crypto-info --global
-  or
+  
+  # or
+  
   npm i crypto-info -g
 ```
 
