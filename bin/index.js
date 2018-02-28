@@ -45,7 +45,7 @@ var oraInstance = (0, _ora2.default)({
 });
 
 // Coin Price Converter
-_commander2.default.command('convert <unit> <symbol> <symbol_2>').alias('c').description('Convert cryptocurrency to other cryptocurrency or local currency').action(function (unit, symbol, symbol_2) {
+_commander2.default.command('convert <unit> <symbol> <symbol_2>').alias('c').description('Convert fiat to crypto or crypto to fiat or crypto to crypto').action(function (unit, symbol, symbol_2) {
   var symbolCaps = symbol.toUpperCase();
   var symbol2Caps = symbol_2.toUpperCase();
   var isBaseFiat = availableCurrencySymbols.includes(symbolCaps);
@@ -73,7 +73,7 @@ _commander2.default.command('convert <unit> <symbol> <symbol_2>').alias('c').des
 });
 
 // Coin info
-_commander2.default.command('price <symbol> [fiat_symbol]').alias('p').description('Price of a cryptocurrency in other cryptocurrency or local currency').action(function (symbol) {
+_commander2.default.command('price <symbol> [fiat_symbol]').alias('p').description('Check price of a cryptocurrency in other cryptocurrency or fiat').action(function (symbol) {
   var fiat_symbol = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : defaultCurrencySymbol;
 
   var symbolCaps = symbol.toUpperCase();

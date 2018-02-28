@@ -61,7 +61,7 @@ const oraInstance = ora({
 program
   .command('convert <unit> <symbol> <symbol_2>')
   .alias('c')
-  .description('Convert cryptocurrency to other cryptocurrency or local currency')
+  .description('Convert fiat to crypto or crypto to fiat or crypto to crypto')
   .action((unit, symbol, symbol_2) => {
     const symbolCaps = symbol.toUpperCase()
     const symbol2Caps = symbol_2.toUpperCase()
@@ -96,7 +96,7 @@ program
 program
   .command('price <symbol> [fiat_symbol]')
   .alias('p')
-  .description('Price of a cryptocurrency in other cryptocurrency or local currency')
+  .description('Check price of a cryptocurrency in other cryptocurrency or fiat')
   .action((symbol, fiat_symbol = defaultCurrencySymbol) => {
     const symbolCaps = symbol.toUpperCase()
     const currencySymbolCaps = fiat_symbol.toUpperCase()

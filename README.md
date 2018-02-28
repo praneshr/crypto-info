@@ -28,14 +28,15 @@ $ crypto-info -h
 
   Commands:
 
-    convert|c <unit> <symbol> [currency_symbol]  Convert cryptocurrency to other cryptocurrency or local currency
-    price|p <symbol> [currency_symbol]           Price of a cryptocurrency in other cryptocurrency or local currency
-    market|m [options] [currency_symbol]         Cryptocurrency market details
+    convert|c <unit> <symbol> <symbol_2>  Convert fiat to crypto or crypto to fiat or crypto to crypto
+    price|p <symbol> [fiat_symbol]        Check price of a cryptocurrency in other cryptocurrency or fiat
+    market|m [options] [fiat_symbol]      Cryptocurrency market details
 
   Examples:
 
     $ crypto-info convert 30 XRP ETH
     $ crypto-info c 640 XLM INR
+    $ crypto-info c 100 USD BTC
     $ crypto-info price ETH
     $ crypto-info p ETH EUR
     $ crypto-info market INR
