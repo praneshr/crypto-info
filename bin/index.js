@@ -45,35 +45,39 @@ var oraInstance = (0, _ora2.default)({
 });
 
 // Coin Price Converter
-_commander2.default.command('convert <unit> <symbol> [currency_symbol]').alias('c').description('Convert cryptocurrency to other cryptocurrency or local currency').action(function (unit, symbol) {
-  var currency_symbol = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : defaultCurrencySymbol;
-
+_commander2.default.command('convert <unit> <symbol> <symbol_2>').alias('c').description('Convert cryptocurrency to other cryptocurrency or local currency').action(function (unit, symbol, symbol_2) {
   var symbolCaps = symbol.toUpperCase();
-  var currencySymbolCaps = currency_symbol.toUpperCase();
-  var symbolId = _cryptocurrencies2.default[symbolCaps];
-  var unitInt = parseFloat(unit);
-  if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
-    return console.error(currencySymbolCaps + ' is currently not supported.');
+  var symbol2Caps = symbol_2.toUpperCase();
+  var isBaseFiat = availableCurrencySymbols.includes(symbolCaps);
+  var isConversionUnitFiat = availableCurrencySymbols.includes(symbol2Caps);
+  if (isBaseFiat && isConversionUnitFiat) {
+    return console.error('Fiat to Fiat conversion is not supported');
+  }
+  var symbolId = _cryptocurrencies2.default[isBaseFiat ? symbol2Caps : symbolCaps];
+  var conversionUnit = isBaseFiat ? symbolCaps : symbol2Caps;
+  if (!isBaseFiat && !combinedAvailableCurrencies.includes(conversionUnit)) {
+    return console.error(conversionUnit + ' is currently not supported.');
   }
   if (symbolId) {
     oraInstance.start();
-    _axios2.default.get('' + defaultRequestUrl + symbolId.toLowerCase() + '/?convert=' + currencySymbolCaps).then(function (_ref) {
+    _axios2.default.get('' + defaultRequestUrl + symbolId.toLowerCase() + '/?convert=' + conversionUnit).then(function (_ref) {
       var data = _ref.data;
 
       oraInstance.stop();
-      var priceKey = 'price_' + currencySymbolCaps.toLowerCase();
+      var priceKey = 'price_' + conversionUnit.toLowerCase();
       var priceInLocalCurrency = data[0][priceKey];
-      console.log(_chalk2.default.blue(unit + ' ' + symbol) + ' = ' + _chalk2.default.green(priceInLocalCurrency * unitInt + ' ' + currencySymbolCaps));
+      var value = isBaseFiat ? unit / priceInLocalCurrency : unit * priceInLocalCurrency;
+      console.log(_chalk2.default.blue(unit + ' ' + symbol) + ' = ' + _chalk2.default.green(value + ' ' + symbol2Caps));
     });
   }
 });
 
 // Coin info
-_commander2.default.command('price <symbol> [currency_symbol]').alias('p').description('Price of a cryptocurrency in other cryptocurrency or local currency').action(function (symbol) {
-  var currency_symbol = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : defaultCurrencySymbol;
+_commander2.default.command('price <symbol> [fiat_symbol]').alias('p').description('Price of a cryptocurrency in other cryptocurrency or local currency').action(function (symbol) {
+  var fiat_symbol = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : defaultCurrencySymbol;
 
   var symbolCaps = symbol.toUpperCase();
-  var currencySymbolCaps = currency_symbol.toUpperCase();
+  var currencySymbolCaps = fiat_symbol.toUpperCase();
   var symbolId = _cryptocurrencies2.default[symbolCaps];
   if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
     return console.error(currencySymbolCaps + ' is currently not supported.');
@@ -93,14 +97,14 @@ _commander2.default.command('price <symbol> [currency_symbol]').alias('p').descr
 });
 
 // Market info
-_commander2.default.command('market [currency_symbol]').option('-l, --limit <n>', 'Limit the number of results', parseInt).option('-w, --watch', 'Auto refresh data every 1 minute').alias('m').description('Cryptocurrency market details').action(function () {
-  var currency_symbol = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultCurrencySymbol;
+_commander2.default.command('market [fiat_symbol]').option('-l, --limit <n>', 'Limit the number of results', parseInt).option('-w, --watch', 'Auto refresh data every 1 minute').alias('m').description('Cryptocurrency market details').action(function () {
+  var fiat_symbol = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : defaultCurrencySymbol;
   var cmd = arguments[1];
 
   var limit = cmd.limit || 10;
   var watch = cmd.watch || false;
-  var currencySymbolCaps = currency_symbol.toUpperCase();
-  var currencySymbolLowerCase = currency_symbol.toLowerCase();
+  var currencySymbolCaps = fiat_symbol.toUpperCase();
+  var currencySymbolLowerCase = fiat_symbol.toLowerCase();
   if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
     return console.error(currencySymbolCaps + ' is currently not supported.');
   }
@@ -136,7 +140,7 @@ _commander2.default.command('market [currency_symbol]').option('-l, --limit <n>'
 });
 
 // General
-_commander2.default.version('0.0.2').description('Cryptocurrency converter and market info');
+_commander2.default.version('0.0.3').description('Cryptocurrency converter and market info');
 
 _commander2.default.on('--help', function () {
   console.log('');
@@ -144,6 +148,7 @@ _commander2.default.on('--help', function () {
   console.log('');
   console.log('    $ crypto-info convert 30 XRP ETH');
   console.log('    $ crypto-info c 640 XLM INR');
+  console.log('    $ crypto-info c 100 USD BTC');
   console.log('    $ crypto-info price ETH');
   console.log('    $ crypto-info p ETH EUR');
   console.log('    $ crypto-info market INR');

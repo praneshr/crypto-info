@@ -59,37 +59,47 @@ const oraInstance = ora({
 
 // Coin Price Converter
 program
-  .command('convert <unit> <symbol> [currency_symbol]')
+  .command('convert <unit> <symbol> <symbol_2>')
   .alias('c')
   .description('Convert cryptocurrency to other cryptocurrency or local currency')
-  .action((unit, symbol, currency_symbol = defaultCurrencySymbol) => {
+  .action((unit, symbol, symbol_2) => {
     const symbolCaps = symbol.toUpperCase()
-    const currencySymbolCaps = currency_symbol.toUpperCase()
-    const symbolId = cryptocurrencies[symbolCaps]
-    const unitInt = parseFloat(unit)
-    if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
-      return console.error(`${currencySymbolCaps} is currently not supported.`)
+    const symbol2Caps = symbol_2.toUpperCase()
+    const isBaseFiat = availableCurrencySymbols.includes(symbolCaps)
+    const isConversionUnitFiat = availableCurrencySymbols.includes(symbol2Caps)
+    if (isBaseFiat && isConversionUnitFiat) {
+      return console.error(`Fiat to Fiat conversion is not supported`)
+    }
+    const symbolId = cryptocurrencies[
+      isBaseFiat ? symbol2Caps : symbolCaps
+    ]
+    const conversionUnit = isBaseFiat ? symbolCaps : symbol2Caps
+    if (!isBaseFiat && !combinedAvailableCurrencies.includes(conversionUnit)) {
+      return console.error(`${conversionUnit} is currently not supported.`)
     }
     if (symbolId) {
       oraInstance.start()
-      axios.get(`${defaultRequestUrl}${symbolId.toLowerCase()}/?convert=${currencySymbolCaps}`)
+      axios.get(`${defaultRequestUrl}${symbolId.toLowerCase()}/?convert=${conversionUnit}`)
       .then(({ data }) => {
         oraInstance.stop()
-        const priceKey = `price_${currencySymbolCaps.toLowerCase()}`
+        const priceKey = `price_${conversionUnit.toLowerCase()}`
         const priceInLocalCurrency = data[0][priceKey]
-        console.log(`${chalk.blue(`${unit} ${symbol}`)} = ${chalk.green(`${priceInLocalCurrency * unitInt} ${currencySymbolCaps}`)}`);
+        const value = isBaseFiat
+          ? unit / priceInLocalCurrency
+          : unit * priceInLocalCurrency
+        console.log(`${chalk.blue(`${unit} ${symbol}`)} = ${chalk.green(`${value} ${symbol2Caps}`)}`);
       })
     }
   })
 
 // Coin info
 program
-  .command('price <symbol> [currency_symbol]')
+  .command('price <symbol> [fiat_symbol]')
   .alias('p')
   .description('Price of a cryptocurrency in other cryptocurrency or local currency')
-  .action((symbol, currency_symbol = defaultCurrencySymbol) => {
+  .action((symbol, fiat_symbol = defaultCurrencySymbol) => {
     const symbolCaps = symbol.toUpperCase()
-    const currencySymbolCaps = currency_symbol.toUpperCase()
+    const currencySymbolCaps = fiat_symbol.toUpperCase()
     const symbolId = cryptocurrencies[symbolCaps]
     if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
       return console.error(`${currencySymbolCaps} is currently not supported.`)
@@ -109,16 +119,16 @@ program
 
 // Market info
 program
-  .command('market [currency_symbol]')
+  .command('market [fiat_symbol]')
   .option('-l, --limit <n>', 'Limit the number of results', parseInt)
   .option('-w, --watch', 'Auto refresh data every 1 minute')
   .alias('m')
   .description('Cryptocurrency market details')
-  .action((currency_symbol = defaultCurrencySymbol, cmd) => {
+  .action((fiat_symbol = defaultCurrencySymbol, cmd) => {
     const limit = cmd.limit || 10
     const watch = cmd.watch || false
-    const currencySymbolCaps = currency_symbol.toUpperCase()
-    const currencySymbolLowerCase = currency_symbol.toLowerCase()
+    const currencySymbolCaps = fiat_symbol.toUpperCase()
+    const currencySymbolLowerCase = fiat_symbol.toLowerCase()
     if (!combinedAvailableCurrencies.includes(currencySymbolCaps)) {
       return console.error(`${currencySymbolCaps} is currently not supported.`)
     }
@@ -170,7 +180,7 @@ program
 
 // General
 program
-  .version('0.0.2')
+  .version('0.0.3')
   .description('Cryptocurrency converter and market info')
 
   program.on('--help', () => {
@@ -179,6 +189,7 @@ program
     console.log('');
     console.log('    $ crypto-info convert 30 XRP ETH');
     console.log('    $ crypto-info c 640 XLM INR');
+    console.log('    $ crypto-info c 100 USD BTC');
     console.log('    $ crypto-info price ETH');
     console.log('    $ crypto-info p ETH EUR');
     console.log('    $ crypto-info market INR');
