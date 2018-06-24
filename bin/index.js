@@ -17,7 +17,7 @@ var _ora = require('ora');
 
 var _ora2 = _interopRequireDefault(_ora);
 
-var _cliTable = require('cli-table2');
+var _cliTable = require('cli-table3');
 
 var _cliTable2 = _interopRequireDefault(_cliTable);
 

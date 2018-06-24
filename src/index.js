@@ -4,7 +4,7 @@ import cryptocurrencies from 'cryptocurrencies'
 import program from 'commander'
 import axios from 'axios'
 import ora from 'ora'
-import Table from 'cli-table2'
+import Table from 'cli-table3'
 import chalk from 'chalk'
 import fromNow from 'from-now'
 
